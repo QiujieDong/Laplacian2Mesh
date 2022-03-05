@@ -1,3 +1,5 @@
+<img src='assets/vase.gif' align="right" width=200>
+
 # Laplacian2Mesh: Laplacian-Based Mesh Understanding
 
 ## Code is coming soon! (The code will be open source after our manuscript is accepted.)
@@ -8,15 +10,6 @@
 
 <img src='assets/teaser.png'>
 
-<img src='assets/vase.gif'>
-
-<!-- ## Requirements
-
-* python 3.7+
-* CUDA 10.1+
-* PyTorch
-
-To install other python requirements:  –>
 
 ## Cite
 
