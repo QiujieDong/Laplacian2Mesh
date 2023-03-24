@@ -2,7 +2,7 @@
 
 # Laplacian2Mesh: Laplacian-Based Mesh Understanding
 
-## Code is coming soon! (The code will be open source after our manuscript is accepted.)
+## Code is coming soon!
 
 ### [Project Page](https://qiujiedong.github.io/publications/Laplacian2Mesh/) | [Paper(ArXiv)](https://arxiv.org/pdf/2202.00307.pdf)
 
@@ -16,16 +16,14 @@
 If you find our work useful for your research, please consider citing the following papers :)
 
 ```bibtex
-@misc{Dong2022Laplacian2MeshLM,
-  title={Laplacian2Mesh: Laplacian-Based Mesh Understanding},
-  author={Qiujie Dong and Zixiong Wang and Junjie Gao and Shuangmin Chen and Zhenyu Shu and Shiqing Xin},
-  year={2022},
-  eprint={2202.00307},
-  archivePrefix={arXiv},
-  primaryClass={cs.CV}
+@article{dong2023laplacian2mesh,
+  title={Laplacian2mesh: Laplacian-based mesh understanding},
+  author={Dong, Qiujie and Wang, Zixiong and Li, Manyi and Gao, Junjie and Chen, Shuangmin and Shu, Zhenyu and Xin, Shiqing and Tu, Changhe and Wang, Wenping},
+  journal={IEEE Transactions on Visualization and Computer Graphics},
+  year={2023},
+  publisher={IEEE}
 }
 ```
-
 
 
 
