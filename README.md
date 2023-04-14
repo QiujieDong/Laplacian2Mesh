@@ -4,7 +4,7 @@
 
 ## Code is coming soon!
 
-### [Project Page](https://qiujiedong.github.io/publications/Laplacian2Mesh/) | [Paper(ArXiv)](https://arxiv.org/pdf/2202.00307.pdf)
+### [Project](https://qiujiedong.github.io/publications/Laplacian2Mesh/) | [Paper](https://arxiv.org/pdf/2202.00307.pdf)
 
 **This repository is the official PyTorch implementation of our paper,  *Laplacian2Mesh: Laplacian-Based Mesh Understanding*.**
 
