@@ -58,7 +58,7 @@ To get the input features by preprocessing:
 sh ./scripts/<DATASET_NAME>/prepaer_data.sh
 ```
 
-> The operation of preprocessing is One-time.
+> The operation of preprocessing is one-time.
 
 ### Training
 
