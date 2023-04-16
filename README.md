@@ -10,7 +10,7 @@
 
 ## News
 - :fire: This paper was accepted by [IEEE TVCG](https://ieeexplore.ieee.org/document/10076837)
-- Gave a talk at [CVM2023](http://iccvm.org/2023/index.htm) on Laplacian2Mesh.
+- :star: Gave a talk at [CVM2023](http://iccvm.org/2023/index.htm) on Laplacian2Mesh.
 
 
 ## Getting Started
