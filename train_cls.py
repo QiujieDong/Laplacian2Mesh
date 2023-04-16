@@ -76,8 +76,8 @@ def train(args, net, train_dl, criterion, writer, epoch):
             torch.cuda.empty_cache()
 
     # tensorboard log: train
-    writer.add_scalar('Accuracy/train_vertices', train_acc_avg(), epoch)
-    writer.add_scalar('Loss/train_vertices', train_loss_avg(), epoch)
+    writer.add_scalar('Accuracy/train', train_acc_avg(), epoch)
+    writer.add_scalar('Loss/train', train_loss_avg(), epoch)
 
     return train_loss_avg(), train_acc_avg()
 
