@@ -58,6 +58,8 @@ To get the input features by preprocessing:
 sh ./scripts/<DATASET_NAME>/prepaer_data.sh
 ```
 
+> The operation of preprocessing is One-time.
+
 ### Training
 
 To train the model on the provided dataset(s) in this paper, run this command:
