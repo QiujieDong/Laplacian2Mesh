@@ -66,6 +66,8 @@ To train the model on the provided dataset(s) in this paper, run this command:
 sh ./scripts/<DATASET_NAME>/train.sh
 ```
 
+> The training process is time-consuming, you can refer to [DiffusionNet](https://github.com/nmwsharp/diffusion-net) to optimize the code to speed up the training.
+
 ## Evaluation
 
 To evaluate the model on a dataset, run:
