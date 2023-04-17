@@ -19,6 +19,11 @@
 - CUDA 11.3
 - Pytorch 1.10.0
 
+To install other python requirements:
+```
+pip install -r requirements.txt
+```
+
 ## Installation
 
 clone this repo: 

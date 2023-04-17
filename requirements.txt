@@ -1,0 +1,11 @@
+igl==2.2.1
+matplotlib==3.4.3
+numpy==1.21.2
+potpourri3d==0.0.7
+robust_laplacian==0.2.4
+scikit_learn==0.23.2
+scipy==1.6.2
+torch==1.10.0
+torchmetrics==0.6.0
+tqdm==4.62.3
+trimesh==3.9.35
