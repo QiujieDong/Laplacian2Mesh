@@ -13,15 +13,13 @@
 - :star: Gave a talk at [CVM2023](http://iccvm.org/2023/index.htm) on Laplacian2Mesh.
 
 
-## Getting Started
-
-### Requirements
+## Requirements
 
 - python 3.7
 - CUDA 11.3
 - Pytorch 1.10.0
 
-### Installation
+## Installation
 
 clone this repo: 
 
@@ -30,7 +28,7 @@ git clone https://github.com/QiujieDong/Laplacian2Mesh.git
 cd Laplacian2Mesh
 ```
 
-### Fetch Data
+## Fetch Data
 
 This repo provides training scripts for classification and segmentation on the following datasets:
 
@@ -50,7 +48,7 @@ sh ./scripts/<DATASET_NAME>/get_data.sh
 > The `coseg_aliens`, `coseg_chairs`, and `coseg_vases` are downloaded via the script of `coseg_aliens`.
 > This repo uses the original `Manifold40` dataset without re-meshing via the Loop Subdivision.
 
-### Preprocessing
+## Preprocessing
 
 To get the input features by preprocessing:
 
@@ -60,7 +58,7 @@ sh ./scripts/<DATASET_NAME>/prepaer_data.sh
 
 > The operation of preprocessing is one-time.
 
-### Training
+## Training
 
 To train the model on the provided dataset(s) in this paper, run this command:
 
@@ -68,7 +66,7 @@ To train the model on the provided dataset(s) in this paper, run this command:
 sh ./scripts/<DATASET_NAME>/train.sh
 ```
 
-### Evaluation
+## Evaluation
 
 To evaluate the model on a dataset, run:
 
@@ -76,7 +74,7 @@ To evaluate the model on a dataset, run:
 sh ./scripts/<DATASET_NAME>/test.sh
 ```
 
-### Visualize
+## Visualize
 
 After testing the segmentation network, there will be colored shapes in the `visualization_result` directory.
 
