@@ -9,11 +9,6 @@ from types import SimpleNamespace
 
 from mesh import Mesh
 
-import scipy as sp
-import open3d as o3d
-import json
-
-
 # mesh normalization, vertex in [-0.5, 0.5]
 def normalize_meshes(args):
     print('------normalize meshes------')
@@ -27,7 +22,7 @@ def normalize_meshes(args):
 
         for file in os.listdir(subset_mesh_path):
             file.strip()
-            if os.path.splitext(file)[1] not in ['.ply']:
+            if os.path.splitext(file)[1] not in ['.ply', '.obj']:
                 continue
             print(os.path.join(subset_mesh_path, file))
 
@@ -38,14 +33,6 @@ def normalize_meshes(args):
                 vertices = vertices / vertices.max()
                 mesh.vertices = vertices
                 mesh.export(os.path.join(norm_mesh_path, os.path.splitext(file)[0] + '.obj'))
-
-                # # add noise
-                # noise_rates = [0.00, 0.005, 0.010, 0.050, 0.080, 0.1]
-                # for ind, noise_rate in enumerate(noise_rates):
-                #     vertices_noise = np.random.rand(vertices.shape[0], vertices.shape[1]) * noise_rate * np.linalg.norm(
-                #         vertices.max(0) - vertices.min(0)) + vertices
-                #     mesh.vertices = vertices_noise
-                #     mesh.export(os.path.join(norm_mesh_path, os.path.splitext(file)[0] + '{}'.format(ind) + '.obj'))
             else:
 
                 if args.augment_orient:
@@ -96,7 +83,7 @@ def generate_cot_eigen_vectors(args):
             mesh: trimesh.Trimesh
             cot = -igl.cotmatrix(mesh.vertices, mesh.faces).toarray()
             cot = torch.from_numpy(cot).float().to(args.device)
-            eigen_values, eigen_vectors = torch.symeig(cot, eigenvectors=True)
+            eigen_values, eigen_vectors = torch.linalg.eigh(cot)
             ind = torch.argsort(eigen_values)[:]
 
             np.save(os.path.join(eigen_vectors_path, os.path.splitext(file)[0] + '_eigen.npy'),
@@ -181,14 +168,6 @@ def generate_VF_3innerProducts(args):
                 if (len(l)) != 3:
                     print(i, 'Padding Failed')
             face_dihedral_angle = np.array(dihedral_angle).reshape(-1, 3)
-
-            # --------------------------------------------------------------------------------------------
-            # sort the face_dihedral_angle, e.g. three dihedral angle [0.5, 0.9, 0.1]--> [0.1, 0.5, 0.9]
-            # ind = np.argsort(face_dihedral_angle, axis=-1)
-            # ind_axis_0 = (np.argwhere(ind > -1)[:, 0]).reshape(-1, 3)
-            #
-            # face_dihedral_angle = face_dihedral_angle[ind_axis_0, ind]
-            # --------------------------------------------------------------------------------------------
 
             vf_3innerProducts = np.dot(vertex_faces_adjacency_matrix, face_dihedral_angle)
 

@@ -22,7 +22,7 @@ class segDataset(Dataset):
 
         # the ground_truth of humanbody dataset has special form
         self.is_humanbody = False
-        if 'humanbody' in self.args.data_path.split('/'):
+        if 'human_seg' in self.args.data_path.split('/'):
             self.is_humanbody = True
 
         self._load_dataset()

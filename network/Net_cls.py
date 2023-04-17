@@ -64,6 +64,15 @@ class Net(nn.Module):
         self.level_2_encoder = SE_ResBlock(1152, 1536, 2048)
 
         if self.num_class == 40:
+            self.conv = nn.Sequential(
+                nn.Conv1d(3200, 2048, kernel_size=1, padding=0),
+                nn.BatchNorm1d(2048),
+                nn.ELU(),
+
+                nn.Conv1d(2048, 1024, kernel_size=1, padding=0),
+                nn.BatchNorm1d(1024),
+                nn.ELU(),
+            )
             self.fc = nn.Sequential(
                 nn.Linear(1024, 512),
                 nn.ELU(),
@@ -72,15 +81,17 @@ class Net(nn.Module):
                 nn.ELU(),
                 nn.Dropout(p=0.5),
             )
+            avg_out_dim = int((self.last_input_dim - 3) / 3 + 1)
+            final_input_dim = 128 * avg_out_dim
         else:
             self.fc = nn.Sequential(
                 nn.Linear(3200, 4096),
                 nn.Linear(4096, 4096),
             )
-        self.avg = nn.AvgPool1d(3)
+            avg_out_dim = int((self.last_input_dim - 3) / 3 + 1)
+            final_input_dim = 4096 * avg_out_dim
 
-        avg_out_dim = int((self.last_input_dim - 3) / 3 + 1)
-        final_input_dim = 4096 * avg_out_dim
+        self.avg = nn.AvgPool1d(3)
 
         self.final = nn.Linear(final_input_dim, self.num_class)
 
@@ -107,6 +118,9 @@ class Net(nn.Module):
         encode_level_2 = encode_level_2.permute(0, 2, 1)  # (B, K_min, 2048)
 
         feat = torch.cat((Transpose_level_02, Transpose_level_12, encode_level_2), dim=-1)
+
+        if self.num_class == 40:
+            feat = self.conv(feat.permute(0, 2, 1)).permute(0, 2, 1)
         feat = self.fc(feat).permute(0, 2, 1)
         feat = self.avg(feat).permute(0, 2, 1)
         feat = feat.view(feat.shape[0], -1)

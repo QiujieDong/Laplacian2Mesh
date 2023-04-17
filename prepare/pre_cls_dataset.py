@@ -67,7 +67,7 @@ def normalize_meshes(args):
                         scales_ratio = np.random.normal(1, 0.1, size=(15, 3))
                     else:
                         rotations_ratio = [0]
-                        scales_ratio = np.random.normal(1, 0.1, size=(1, 3))
+                        scales_ratio = np.random.normal(1, 0.1, size=(45, 3))
 
                     for i in range(len(rotations_ratio)):
                         # trimesh.copy() is deepcopy. copy(include_cache=False):If True, will shallow copy cached data to new mesh
@@ -274,7 +274,7 @@ def HKS(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='../data/cubes')
+    parser.add_argument('--data_path', type=str, default='../data/shrec_16')
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--augment_orient', action='store_true')
     args = parser.parse_args()
