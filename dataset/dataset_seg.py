@@ -41,7 +41,7 @@ class segDataset(Dataset):
         hks_path = os.path.join(self.args.data_path, 'HKS', self.set_type)
         gt_path = os.path.join(self.args.data_path, 'ground_truth', self.set_type)
         gaussian_curvature_path = os.path.join(self.args.data_path, 'gaussian_curvatures', self.set_type)
-        vf_dihedral_angle_path = os.path.join(self.args.data_path, 'VF_3innerProducts', self.set_type)
+        V_dihedral_angles_path = os.path.join(self.args.data_path, 'V_dihedral_angles', self.set_type)
 
         if self.is_train == False:
             vf_list = list()
@@ -60,8 +60,11 @@ class segDataset(Dataset):
             file.strip()
             if os.path.isdir(os.path.join(mesh_path, file)):
                 continue
-            # The 166.obj in aliens_dataset has the wrong ground truth provided by meshcnn
-            if 'aliens' in self.args.data_path.split('/') and self.set_type == 'test' and file == '166.obj':
+            # On the dataset provided by meshcnn, the 166.obj in aliens_dataset has the wrong ground truth.
+            if 'coseg_aliens' in self.args.data_path.split('/') and self.set_type == 'test' and file == '166.obj':
+                continue
+            # shrec__15's right calf is labeled incorrectly.
+            if self.is_humanbody and self.set_type == 'test' and file == 'shrec__15.obj':
                 continue
             print(os.path.join(mesh_path, file))
 
@@ -95,14 +98,14 @@ class segDataset(Dataset):
             gaussian_curvature = ((gaussian_curvature - gaussian_curvature.min()) / (
                     gaussian_curvature.max() - gaussian_curvature.min())).unsqueeze(1)
 
-            vf_dihedral_angle = torch.from_numpy(
-                np.load(os.path.join(vf_dihedral_angle_path, os.path.splitext(file)[0] + '_vf_3innerProduct.npy')))
+            V_dihedral_angles = torch.from_numpy(
+                np.load(os.path.join(V_dihedral_angles_path, os.path.splitext(file)[0] + '_V_dihedralAngles.npy')))
 
             max_vertex_num = np.maximum(max_vertex_num, gt.shape[0])
 
             # the input features
             features = torch.from_numpy(np.concatenate(
-                (mesh.vertices, mesh.vertex_normals, eigen_vector[:, 1:21], gaussian_curvature, vf_dihedral_angle, hks_cat), axis=1))
+                (mesh.vertices, mesh.vertex_normals, eigen_vector[:, 1:21], gaussian_curvature, V_dihedral_angles, hks_cat), axis=1))
 
 
             eigen_list = list()
@@ -142,7 +145,7 @@ class segDataset(Dataset):
 
                 vf_list.append(torch.from_numpy(copy.copy(mesh.vertex_faces)).long())
 
-            del mesh, eigen_vector, hks_cat, gt, gaussian_curvature, vf_dihedral_angle, features, eigen_list, levels, c_list, data, final_mat
+            del mesh, eigen_vector, hks_cat, gt, gaussian_curvature, V_dihedral_angles, features, eigen_list, levels, c_list, data, final_mat
             if self.is_train == False:
                 del gt_face
             gc.collect()

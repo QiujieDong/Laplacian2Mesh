@@ -34,7 +34,7 @@ class ClsDataset(Dataset):
         vector_path = os.path.join(self.args.data_path, 'eigen_vectors', self.set_type)
         hks_path = os.path.join(self.args.data_path, 'HKS', self.set_type)
         gaussian_curvature_path = os.path.join(self.args.data_path, 'gaussian_curvatures', self.set_type)
-        vf_dihedral_angle_path = os.path.join(self.args.data_path, 'VF_3innerProducts', self.set_type)
+        V_dihedral_angles_path = os.path.join(self.args.data_path, 'V_dihedral_angles', self.set_type)
 
         dirs_list = [f for f in sorted(os.listdir(mesh_path))]
 
@@ -77,17 +77,17 @@ class ClsDataset(Dataset):
                 gaussian_curvature = ((gaussian_curvature - gaussian_curvature.min()) / (
                         gaussian_curvature.max() - gaussian_curvature.min())).unsqueeze(1)
 
-                vf_dihedral_angle = torch.from_numpy(
+                V_dihedral_angles = torch.from_numpy(
                     np.load(
-                        os.path.join(vf_dihedral_angle_path, d, os.path.splitext(file)[0] + '_vf_3innerProduct.npy')))
-                if torch.isnan(vf_dihedral_angle).sum() > 0 or torch.isinf(vf_dihedral_angle).sum() > 0:
+                        os.path.join(V_dihedral_angles_path, d, os.path.splitext(file)[0] + '_V_dihedralAngles.npy')))
+                if torch.isnan(V_dihedral_angles).sum() > 0 or torch.isinf(V_dihedral_angles).sum() > 0:
                     print('vf_dihedral_angle errors, exit')
                     sys.exit()
                 # the input features
                 features = torch.cat(
                     (torch.from_numpy(np.array(mesh.vertices)).float(),
                      torch.from_numpy(np.array(mesh.vertex_normals)).float(),
-                     eigen_vector[:, 1:21], gaussian_curvature, vf_dihedral_angle,
+                     eigen_vector[:, 1:21], gaussian_curvature, V_dihedral_angles,
                      hks_cat), dim=1)
 
                 eigen_list = list()
@@ -112,7 +112,7 @@ class ClsDataset(Dataset):
                 datas.append(data)
                 gt_list.append(gt_dict[d])
 
-                del mesh, eigen_vector, hks_cat, gaussian_curvature, vf_dihedral_angle, features, eigen_list, levels, c_list, data
+                del mesh, eigen_vector, hks_cat, gaussian_curvature, V_dihedral_angles, features, eigen_list, levels, c_list, data
                 gc.collect()
 
         self.datas = datas
