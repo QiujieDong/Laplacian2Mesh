@@ -9,6 +9,7 @@ from types import SimpleNamespace
 
 from mesh import Mesh
 
+
 # mesh normalization, vertex in [-0.5, 0.5]
 def normalize_meshes(args):
     print('------normalize meshes------')
@@ -36,8 +37,13 @@ def normalize_meshes(args):
             else:
 
                 if args.augment_orient:
-                    rotations_ratio = np.random.choice([0, 1, 2, 3], size=3, replace=False)
-                    scales_ratio = np.random.normal(1, 0.1, size=(15, 3))
+                    if args.is_humanbody:
+                        rotations_ratio = np.random.choice([0, 1, 2, 3, 4, 5, 6, 7], size=5, replace=False)
+                        scales_ratio = np.random.normal(1, 0.1, size=(9, 3))
+                        axis_list = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+                    else:
+                        rotations_ratio = np.random.choice([0, 1, 2, 3], size=3, replace=False)
+                        scales_ratio = np.random.normal(1, 0.1, size=(15, 3))
                 else:
                     rotations_ratio = [0]
                     scales_ratio = np.random.normal(1, 0.1, size=(45, 3))
@@ -45,7 +51,12 @@ def normalize_meshes(args):
                 for i in range(len(rotations_ratio)):
                     # trimesh.copy() is deepcopy. copy(include_cache=False):If True, will shallow copy cached data to new mesh
                     mesh_tans_rotation = mesh.copy()
-                    rotation = trimesh.transformations.rotation_matrix((np.pi / 2) * rotations_ratio[i],
+                    if args.is_humanbody:
+                        axis_ind = np.random.choice([0, 1, 2], size=1, replace=False)
+                        rotation = trimesh.transformations.rotation_matrix((np.pi / 4) * rotations_ratio[i],
+                                                                           axis_list[axis_ind[0]])
+                    else:
+                        rotation = trimesh.transformations.rotation_matrix((np.pi / 2) * rotations_ratio[i],
                                                                        [0, 1, 0])
                     mesh_tans_rotation.apply_transform(rotation)
 
@@ -116,15 +127,15 @@ def generate_gaussian_curvature(args):
                     mesh_gaussian_curvature)
 
 
-def generate_VF_3innerProducts(args):
+def generate_dihedral_angles(args):
     print('------generate Vertex_Face 3innerProducts------')
     for _, subset_name in enumerate(['train', 'test']):
 
         subset_mesh_path = os.path.join(args.data_path, subset_name + '_norm')
 
-        vf_3innerProducts_path = os.path.join(args.data_path, 'VF_3innerProducts', subset_name)
-        if not os.path.exists(vf_3innerProducts_path):
-            os.makedirs(vf_3innerProducts_path)
+        V_dihedral_angles_path = os.path.join(args.data_path, 'V_dihedral_angles', subset_name)
+        if not os.path.exists(V_dihedral_angles_path):
+            os.makedirs(V_dihedral_angles_path)
 
         for file in sorted(os.listdir(subset_mesh_path)):
             file.strip()
@@ -169,10 +180,10 @@ def generate_VF_3innerProducts(args):
                     print(i, 'Padding Failed')
             face_dihedral_angle = np.array(dihedral_angle).reshape(-1, 3)
 
-            vf_3innerProducts = np.dot(vertex_faces_adjacency_matrix, face_dihedral_angle)
+            V_dihedral_angles = np.dot(vertex_faces_adjacency_matrix, face_dihedral_angle)
 
-            np.save(os.path.join(vf_3innerProducts_path, os.path.splitext(file)[0] + '_vf_3innerProduct.npy'),
-                    vf_3innerProducts)
+            np.save(os.path.join(V_dihedral_angles_path, os.path.splitext(file)[0] + '_V_dihedralAngles.npy'),
+                    V_dihedral_angles)
 
 
 def generate_vertices_ground_truth_from_edges(args):
@@ -290,86 +301,19 @@ def HKS(args):
             np.save(os.path.join(HKS_path, os.path.splitext(file)[0] + '_hks.npy'), hks_cat)
 
 
-def generate_VF_3innerProducts_select_min_max(args):
-    print('------generate Vertex_Face 3innerProducts------')
-    for _, subset_name in enumerate(['train', 'test']):
-
-        subset_mesh_path = os.path.join(args.data_path, subset_name + '_norm')
-
-        vf_3innerProducts_path = os.path.join(args.data_path, 'vertex_dihedral_angles_min_max', subset_name)
-        if not os.path.exists(vf_3innerProducts_path):
-            os.makedirs(vf_3innerProducts_path)
-
-        for file in sorted(os.listdir(subset_mesh_path)):
-            file.strip()
-            if os.path.splitext(file)[1] not in ['.obj']:
-                continue
-            print(os.path.join(subset_mesh_path, file))
-
-            mesh = trimesh.load(os.path.join(subset_mesh_path, file), process=False)
-            mesh: trimesh.Trimesh
-
-            faces_for_each_edge = mesh.face_adjacency  # Pairs of faces which share an edge
-            edges_of_face_adjacency = mesh.face_adjacency_edges  # Vertex indices which correspond to face_adjacency (edge)
-            face_normals = mesh.face_normals
-            mesh_vertices = mesh.vertices
-
-            # dihedral_angle_values = np.zeros((faces_for_each_edge.shape[0], 1), dtype=np.float)
-            dihedral_angle_values = []
-            # faces_cross_values = np.zeros((faces_for_each_edge.shape[0], 1), dtype=np.float)
-            faces_cross_values = []
-            for i_edge, faces in enumerate(faces_for_each_edge):
-                # the value of dihedral angle
-                dihedral_angle_value = np.dot(face_normals[faces[0]], face_normals[faces[1]])
-                dihedral_angle_values.append(np.exp(-dihedral_angle_value))
-
-                # the cross value of faces
-                faces_cross_values.append(np.cross(face_normals[faces[0]], face_normals[faces[1]]))
-
-            dihedral_angle_values = np.array(dihedral_angle_values)
-            faces_cross_values = np.array(faces_cross_values)
-
-            # dihedral_angle_values = dihedral_angle_values.squeeze()
-            # faces_cross_values = faces_cross_values.squeeze()
-
-            vertex_all_dihedral_angles = [[] for i in range(mesh_vertices.shape[0])]
-
-            for i_edge, vertices in enumerate(edges_of_face_adjacency):
-                # the direction of the dihedral angle
-                vertex_direction_0to1 = mesh_vertices[vertices[1]] - mesh_vertices[vertices[0]]
-                dihedral_angle_direction_0to1 = np.dot(faces_cross_values[i_edge], vertex_direction_0to1)
-
-                if dihedral_angle_direction_0to1 > 0:
-                    vertex_all_dihedral_angles[vertices[0]].append(dihedral_angle_values[i_edge])
-                    vertex_all_dihedral_angles[vertices[1]].append(-dihedral_angle_values[i_edge])
-                else:
-                    vertex_all_dihedral_angles[vertices[0]].append(-dihedral_angle_values[i_edge])
-                    vertex_all_dihedral_angles[vertices[1]].append(dihedral_angle_values[i_edge])
-
-            min_max_each_vertex_dihedral_angle = [[] for i in range(mesh.vertices.shape[0])]
-
-            for i_vertex in range(len(vertex_all_dihedral_angles)):
-                min_max_each_vertex_dihedral_angle[i_vertex].append(min(vertex_all_dihedral_angles[i_vertex]))
-                min_max_each_vertex_dihedral_angle[i_vertex].append(max(vertex_all_dihedral_angles[i_vertex]))
-
-            min_max_each_vertex_dihedral_angle = np.array(min_max_each_vertex_dihedral_angle)
-
-            np.save(os.path.join(vf_3innerProducts_path, os.path.splitext(file)[0] + '_vf_3innerProduct.npy'),
-                    min_max_each_vertex_dihedral_angle)
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, default='data/humanbody')
     parser.add_argument('--device', type=str, default='cuda')
     # parser.add_argument('--augment_scale', action='store_true')
     parser.add_argument('--augment_orient', action='store_true')
+    parser.add_argument('--is_humanbody', action='store_true')
     args = parser.parse_args()
 
     normalize_meshes(args)
     generate_cot_eigen_vectors(args)
     generate_gaussian_curvature(args)
-    generate_VF_3innerProducts(args)
+    generate_dihedral_angles(args)
     generate_vertices_ground_truth_from_edges(args)
     generate_faces_ground_truth_from_vertices(args)
     HKS(args)

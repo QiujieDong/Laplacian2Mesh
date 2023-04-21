@@ -163,20 +163,20 @@ def generate_gaussian_curvature(args):
                     mesh_gaussian_curvature)
 
 
-def generate_VF_3innerProducts(args):
+def generate_dihedral_angles(args):
     print('------generate Vertex_Face 3innerProducts------')
     for _, subset_name in enumerate(['train', 'test']):
 
         subset_mesh_path = os.path.join(args.data_path, subset_name + '_norm')
 
-        vf_3innerProducts_path = os.path.join(args.data_path, 'VF_3innerProducts', subset_name)
-        if not os.path.exists(vf_3innerProducts_path):
-            os.makedirs(vf_3innerProducts_path)
+        V_dihedral_angles_path = os.path.join(args.data_path, 'V_dihedral_angles', subset_name)
+        if not os.path.exists(V_dihedral_angles_path):
+            os.makedirs(V_dihedral_angles_path)
         for d in os.listdir(subset_mesh_path):
             if not os.path.isdir(os.path.join(subset_mesh_path, d)):
                 continue
-            if not os.path.exists(os.path.join(vf_3innerProducts_path, d)):
-                os.makedirs(os.path.join(vf_3innerProducts_path, d))
+            if not os.path.exists(os.path.join(V_dihedral_angles_path, d)):
+                os.makedirs(os.path.join(V_dihedral_angles_path, d))
             for file in sorted(os.listdir(os.path.join(subset_mesh_path, d))):
                 file.strip()
                 if os.path.splitext(file)[1] not in ['.obj']:
@@ -220,10 +220,10 @@ def generate_VF_3innerProducts(args):
                         print(i, 'Padding Failed')
                 face_dihedral_angle = np.array(dihedral_angle).reshape(-1, 3)
 
-                vf_3innerProducts = np.dot(vertex_faces_adjacency_matrix, face_dihedral_angle)
+                V_dihedral_angles = np.dot(vertex_faces_adjacency_matrix, face_dihedral_angle)
 
-                np.save(os.path.join(vf_3innerProducts_path, d, os.path.splitext(file)[0] + '_vf_3innerProduct.npy'),
-                        vf_3innerProducts)
+                np.save(os.path.join(V_dihedral_angles_path, d, os.path.splitext(file)[0] + '_V_dihedralAngles.npy'),
+                        V_dihedral_angles)
 
 
 def HKS(args):
@@ -259,7 +259,6 @@ def HKS(args):
                 t_max = 4 * np.log(10) / np.sort(eigen_values)[1]
                 ts = np.linspace(t_min, t_max, num=100, dtype=np.float128)
                 exp_value = (-eigen_values[None, :, None] * ts.flatten()[None, None, :])
-                # exp_value[np.abs(exp_value) > 1e2] = 1e2
                 hkss = (eigen_vector[:, :, None] ** 2) * np.exp(exp_value)
                 hks = torch.tensor(np.sum(hkss, axis=1).astype(np.float64)).float()
                 hks_cat = ((hks[:, 1] - hks[:, 1].min()) / (hks[:, 1].max() - hks[:, 1].min())).unsqueeze(1)
@@ -283,5 +282,5 @@ if __name__ == '__main__':
     normalize_meshes(args)
     generate_cot_eigen_vectors(args)
     generate_gaussian_curvature(args)
-    generate_VF_3innerProducts(args)
+    generate_dihedral_angles(args)
     HKS(args)
