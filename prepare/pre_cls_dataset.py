@@ -4,7 +4,7 @@ import shutil
 import sys
 
 import numpy as np
-import torch
+import scipy
 import igl
 import trimesh
 import robust_laplacian
@@ -115,19 +115,17 @@ def generate_cot_eigen_vectors(args):
                 print(os.path.join(subset_mesh_path, d, file))
                 mesh = trimesh.load(os.path.join(subset_mesh_path, d, file), process=False)
                 mesh: trimesh.Trimesh
-                cot = -igl.cotmatrix(mesh.vertices, mesh.faces).toarray()
-                if np.sum(cot != cot.T) > 0:  # non Symmetry using roboust Lap (SGP 2020)
-                    L, M = robust_laplacian.mesh_laplacian(np.asarray(mesh.vertices), np.asarray(mesh.faces))
-                    cot = torch.from_numpy(L.toarray()).float().to(args.device)
-                else:
-                    cot = torch.from_numpy(cot).float().to(args.device)
-                eigen_values, eigen_vectors = torch.linalg.eigh(cot)
-                ind = torch.argsort(eigen_values)[:]
+                cot = -igl.cotmatrix(mesh.vertices, mesh.faces)
+                cot = cot.tocsr()
+                if abs(cot - cot.T).sum() > 0:  # non Symmetry using robust Lap (SGP 2020)
+                    L, _ = robust_laplacian.mesh_laplacian(np.asarray(mesh.vertices), np.asarray(mesh.faces))
+                eigen_values, eigen_vectors = scipy.sparse.linalg.eigsh(cot, k=args.eigen_num)
+                ind = np.argsort(eigen_values)[:]
 
                 np.save(os.path.join(eigen_vectors_path, d, os.path.splitext(file)[0] + '_eigen.npy'),
-                        eigen_vectors[:, ind].cpu().numpy())
+                        eigen_vectors[:, ind])
                 np.save(os.path.join(eigen_values_path, d, os.path.splitext(file)[0] + '_eigenValues.npy'),
-                        eigen_values[ind].cpu().numpy())
+                        eigen_values[ind])
 
 
 def generate_gaussian_curvature(args):
@@ -186,7 +184,9 @@ def generate_dihedral_angles(args):
                 mesh = trimesh.load(os.path.join(subset_mesh_path, d, file), process=False)
                 mesh: trimesh.Trimesh
 
-                vertex_faces_adjacency_matrix = np.zeros((mesh.vertices.shape[0], mesh.faces.shape[0]))
+                vertex_faces_adjacency_matrix = scipy.sparse.lil_matrix((mesh.vertices.shape[0],
+                                                                         mesh.faces.shape[0]),
+                                                                         dtype=np.int64)
                 for vertex, faces in enumerate(mesh.vertex_faces):
                     for i, face in enumerate(faces):
                         if face == -1:
@@ -220,7 +220,7 @@ def generate_dihedral_angles(args):
                         print(i, 'Padding Failed')
                 face_dihedral_angle = np.array(dihedral_angle).reshape(-1, 3)
 
-                V_dihedral_angles = np.dot(vertex_faces_adjacency_matrix, face_dihedral_angle)
+                V_dihedral_angles = vertex_faces_adjacency_matrix.dot(face_dihedral_angle)
 
                 np.save(os.path.join(V_dihedral_angles_path, d, os.path.splitext(file)[0] + '_V_dihedralAngles.npy'),
                         V_dihedral_angles)
@@ -260,21 +260,22 @@ def HKS(args):
                 ts = np.linspace(t_min, t_max, num=100, dtype=np.float128)
                 exp_value = (-eigen_values[None, :, None] * ts.flatten()[None, None, :])
                 hkss = (eigen_vector[:, :, None] ** 2) * np.exp(exp_value)
-                hks = torch.tensor(np.sum(hkss, axis=1).astype(np.float64)).float()
-                hks_cat = ((hks[:, 1] - hks[:, 1].min()) / (hks[:, 1].max() - hks[:, 1].min())).unsqueeze(1)
+                hks = np.sum(hkss, axis=1).astype(np.float64)
+                hks_cat = ((hks[:, 1] - hks[:, 1].min()) / (hks[:, 1].max() - hks[:, 1].min()))[:, np.newaxis]
                 for i, k in enumerate([2, 3, 4, 5, 8, 10, 15, 20]):
-                    hks_norm = ((hks[:, k] - hks[:, k].min()) / (hks[:, k].max() - hks[:, k].min())).unsqueeze(1)
-                    hks_cat = torch.cat((hks_cat, hks_norm), dim=1)
-                if torch.isnan(hks_cat).sum() > 0 or torch.isinf(hks_cat).sum() > 0:
+                    hks_norm = ((hks[:, k] - hks[:, k].min()) / (hks[:, k].max() - hks[:, k].min()))[:, np.newaxis]
+                    hks_cat = np.concatenate((hks_cat, hks_norm), axis=1)
+                if np.isnan(hks_cat).sum() > 0 or np.isinf(hks_cat).sum() > 0:
                     print('hks errors, exit')
                     sys.exit()
-                np.save(os.path.join(HKS_path, d, os.path.splitext(file)[0] + '_hks.npy'), hks_cat.numpy())
+                np.save(os.path.join(HKS_path, d, os.path.splitext(file)[0] + '_hks.npy'), hks_cat)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, default='../data/shrec_16')
-    parser.add_argument('--device', type=str, default='cuda')
+    # parser.add_argument('--device', type=str, default='cuda')
+    parser.add_argument('--eigen_num', type=int, default=21)
     parser.add_argument('--augment_orient', action='store_true')
     args = parser.parse_args()
 
