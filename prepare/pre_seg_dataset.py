@@ -2,7 +2,7 @@ import argparse
 import os
 
 import numpy as np
-import torch
+import scipy
 import igl
 import trimesh
 from types import SimpleNamespace
@@ -92,15 +92,14 @@ def generate_cot_eigen_vectors(args):
 
             mesh = trimesh.load(os.path.join(subset_mesh_path, file), process=False)
             mesh: trimesh.Trimesh
-            cot = -igl.cotmatrix(mesh.vertices, mesh.faces).toarray()
-            cot = torch.from_numpy(cot).float().to(args.device)
-            eigen_values, eigen_vectors = torch.linalg.eigh(cot)
-            ind = torch.argsort(eigen_values)[:]
+            cot = -igl.cotmatrix(mesh.vertices, mesh.faces)
+            eigen_values, eigen_vectors = scipy.sparse.linalg.eigsh(cot, k=args.eigen_num)
+            ind = np.argsort(eigen_values)[:]
 
             np.save(os.path.join(eigen_vectors_path, os.path.splitext(file)[0] + '_eigen.npy'),
-                    eigen_vectors[:, ind].cpu().numpy())
+                    eigen_vectors[:, ind])
             np.save(os.path.join(eigen_values_path, os.path.splitext(file)[0] + '_eigenValues.npy'),
-                    eigen_values[ind].cpu().numpy())
+                    eigen_values[ind])
 
 
 def generate_gaussian_curvature(args):
@@ -146,7 +145,9 @@ def generate_dihedral_angles(args):
             mesh = trimesh.load(os.path.join(subset_mesh_path, file), process=False)
             mesh: trimesh.Trimesh
 
-            vertex_faces_adjacency_matrix = np.zeros((mesh.vertices.shape[0], mesh.faces.shape[0]))
+            vertex_faces_adjacency_matrix = scipy.sparse.lil_matrix((mesh.vertices.shape[0],
+                                                                     mesh.faces.shape[0]),
+                                                                     dtype=np.int64)
             for vertex, faces in enumerate(mesh.vertex_faces):
                 for i, face in enumerate(faces):
                     if face == -1:
@@ -180,7 +181,7 @@ def generate_dihedral_angles(args):
                     print(i, 'Padding Failed')
             face_dihedral_angle = np.array(dihedral_angle).reshape(-1, 3)
 
-            V_dihedral_angles = np.dot(vertex_faces_adjacency_matrix, face_dihedral_angle)
+            V_dihedral_angles = vertex_faces_adjacency_matrix.dot(face_dihedral_angle)
 
             np.save(os.path.join(V_dihedral_angles_path, os.path.splitext(file)[0] + '_V_dihedralAngles.npy'),
                     V_dihedral_angles)
@@ -282,21 +283,19 @@ def HKS(args):
                 continue
             print(os.path.join(subset_mesh_path, file))
 
-            eigen_vector = torch.from_numpy(
-                np.load(os.path.join(eigen_vectors_path, os.path.splitext(file)[0] + '_eigen.npy'))).float()
-            eigen_values = torch.from_numpy(
-                np.load(os.path.join(eigen_values_path, os.path.splitext(file)[0] + '_eigenValues.npy'))).float()
+            eigen_vector = np.load(os.path.join(eigen_vectors_path, os.path.splitext(file)[0] + '_eigen.npy'))
+            eigen_values = np.load(os.path.join(eigen_values_path, os.path.splitext(file)[0] + '_eigenValues.npy'))
 
             t_min = 4 * np.log(10) / eigen_values.max()
             t_max = 4 * np.log(10) / np.sort(eigen_values)[1]
             ts = np.linspace(t_min, t_max, num=100)
             hkss = (eigen_vector[:, :, None] ** 2) * np.exp(
                 -eigen_values[None, :, None] * ts.flatten()[None, None, :])
-            hks = torch.sum(hkss, dim=1)
-            hks_cat = ((hks[:, 1] - hks[:, 1].min()) / (hks[:, 1].max() - hks[:, 1].min())).unsqueeze(1)
+            hks = np.sum(hkss, axis=1)
+            hks_cat = ((hks[:, 1] - hks[:, 1].min()) / (hks[:, 1].max() - hks[:, 1].min()))[:, np.newaxis]
             for i, k in enumerate([2, 3, 4, 5, 8, 10, 15, 20]):
-                hks_norm = ((hks[:, k] - hks[:, k].min()) / (hks[:, k].max() - hks[:, k].min())).unsqueeze(1)
-                hks_cat = torch.cat((hks_cat, hks_norm), dim=1)
+                hks_norm = ((hks[:, k] - hks[:, k].min()) / (hks[:, k].max() - hks[:, k].min()))[:, np.newaxis]
+                hks_cat = np.concatenate((hks_cat, hks_norm), axis=1)
 
             np.save(os.path.join(HKS_path, os.path.splitext(file)[0] + '_hks.npy'), hks_cat)
 
@@ -304,7 +303,8 @@ def HKS(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, default='data/humanbody')
-    parser.add_argument('--device', type=str, default='cuda')
+    # parser.add_argument('--device', type=str, default='cuda')
+    parser.add_argument('--eigen_num', type=int, default=21)
     # parser.add_argument('--augment_scale', action='store_true')
     parser.add_argument('--augment_orient', action='store_true')
     parser.add_argument('--is_humanbody', action='store_true')
