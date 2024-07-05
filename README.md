@@ -90,12 +90,15 @@ After testing the segmentation network, there will be colored shapes in the `vis
 If you find our work useful for your research, please consider citing the following papers :)
 
 ```bibtex
-@article{dong2023laplacian2mesh,
-  title={Laplacian2mesh: Laplacian-based mesh understanding},
-  author={Dong, Qiujie and Wang, Zixiong and Li, Manyi and Gao, Junjie and Chen, Shuangmin and Shu, Zhenyu and Xin, Shiqing and Tu, Changhe and Wang, Wenping},
-  journal={IEEE Transactions on Visualization and Computer Graphics},
-  year={2023},
-  publisher={IEEE}
+@ARTICLE{Dong2023Laplacian2Mesh,
+    author={Dong, Qiujie and Wang, Zixiong and Li, Manyi and Gao, Junjie and Chen, Shuangmin and Shu, Zhenyu and Xin, Shiqing and Tu, Changhe and Wang, Wenping},
+    title={Laplacian2Mesh: Laplacian-Based Mesh Understanding},
+    journal={IEEE Transactions on Visualization and Computer Graphics},
+    year={2024},
+    volume={30},
+    number={7},
+    pages={4349-4361},
+    doi={10.1109/TVCG.2023.3259044}
 }
 ```
 
